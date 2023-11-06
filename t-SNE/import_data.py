@@ -1,7 +1,6 @@
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import cm
 from sklearn.manifold import TSNE
 
 coarse_to_category = {
@@ -146,8 +145,8 @@ def tsne_data(N_IMAGES_PER_CLASS=15):
     y_train = coarse_labels_train[idx]
     y_train_fine = fine_labels_train[idx]
 
-    ##### ----- Uncomment this part to plot an example image for each class ----- #####
-
+    # #### ----- Uncomment this part to plot an example image for each class ----- #####
+    #
     # plt.figure(figsize=(20, 20))
     # for i in range(len(np.unique(y_train))):
     #     class_indices = np.where(y_train == i)[0]
