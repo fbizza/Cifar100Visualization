@@ -4,7 +4,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import base64
-from dash import Dash, dcc, html, Input, Output
+import dash
+from dash import Dash, dcc, html, Input, Output, State
 from import_data import tsne_data
 
 # Import data and create Pandas dataframe
@@ -44,9 +45,9 @@ app.layout = dbc.Container([
             value=100,  # Initial value for the number of points to show
             tooltip={"placement": "bottom", "always_visible": True}
         ),
-        html.H6("Created by Stijn Oosterlinck, Justine Rayp and Francesco Bizzarri", style={'margin-top': '4em',
-                                                                                            'font-size': '0.8em',
-                                                                                            'font-weight': 'lighter'})
+        dbc.Button("Update Plot", id="update-plot-button", color="primary"),
+        html.H6("Created by Stijn Oosterlinck, Justine Rayp and Francesco Bizzarri",
+                style={'margin-top': '3.5em', 'font-size': '0.8em', 'font-weight': 'lighter'})
     ]),
 ])
 
@@ -72,13 +73,15 @@ def show_clicked_image(clickData):
         fine_category = clickData['points'][0]['customdata'][1]
         return f'This picture shows a {fine_category}'
 
-# Callback for updating scatter plot based on slider number selection
+# Callback for updating scatter plot based on slider number selection and button click
 @app.callback(
     Output("scatter-plot", "figure"),
-    Input("max-slider", "value"))
-def update_scatter_plot(num_points_high):
-    num_points_low = 0  # Fixed low point
-    num_points_to_show = num_points_high - num_points_low
+    Input("update-plot-button", "n_clicks"),
+    State("max-slider", "value")
+)
+def update_scatter_plot_on_button_click(n_clicks, value):
+
+    num_points_to_show = value  # Value from slider
 
     selected_points = df.sample(n=num_points_to_show)
 
