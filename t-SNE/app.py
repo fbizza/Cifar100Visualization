@@ -8,7 +8,7 @@ from dash import Dash, dcc, html, Input, Output
 from import_data import tsne_data
 
 # Import data and create Pandas dataframe
-x, y, coarse_labels, coarse_categories, fine_categories, images = tsne_data(N_IMAGES_PER_CLASS=30)
+x, y, coarse_labels, coarse_categories, fine_categories, images = tsne_data(N_IMAGES_PER_CLASS=50)
 
 data = {
     't_sne_x': x,
@@ -41,10 +41,12 @@ app.layout = dbc.Container([
             id='max-slider',
             min=0, max=len(df.index), step=1,
             marks={0: '0', len(df.index): f'{len(df.index)}'},
-            value=10,  # Initial value for the number of points to show
+            value=100,  # Initial value for the number of points to show
             tooltip={"placement": "bottom", "always_visible": True}
         ),
-        html.H6("Created by Stijn Oosterlinck, Justine Rayp and Francesco Bizzarri")
+        html.H6("Created by Stijn Oosterlinck, Justine Rayp and Francesco Bizzarri", style={'margin-top': '4em',
+                                                                                            'font-size': '0.8em',
+                                                                                            'font-weight': 'lighter'})
     ]),
 ])
 

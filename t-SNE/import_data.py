@@ -134,7 +134,7 @@ np.random.seed(seed=666)
 (x_train_fine, fine_labels_train), (x_test_fine, fine_labels_test) = tf.keras.datasets.cifar100.load_data(label_mode='fine')
 (x_train_coarse, coarse_labels_train), (x_test_coarse, coarse_labels_test) = tf.keras.datasets.cifar100.load_data(label_mode='coarse')
 
-def tsne_data(N_IMAGES_PER_CLASS=10):
+def tsne_data(N_IMAGES_PER_CLASS=15):
 
     # Loop over each class label and sample N_IMAGES_PER_CLASS random images over each class
     idx = np.empty(0, dtype="int8")
@@ -158,7 +158,7 @@ def tsne_data(N_IMAGES_PER_CLASS=10):
     #     plt.axis('off')
     # plt.show()
 
-    model = TSNE(n_components=2, random_state=0)
+    model = TSNE(n_components=2, perplexity=15)
     tsne = model.fit_transform(x_train.reshape((len(x_train), 32 * 32 * 3)))  # Flatten the images
     x = tsne[:, 0]
     y = tsne[:, 1]
