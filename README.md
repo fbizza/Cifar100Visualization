@@ -3,6 +3,7 @@ Interactive dashboard implemented in Dash that enables some simple explorationon
 
 ## Run the code
 In the `t-SNE` folder: 
+```
 pip install -r requirements.txt
-
+```
 Then run `app.py` and just click on the link 
