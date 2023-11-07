@@ -45,9 +45,9 @@ app.layout = dbc.Container([
             value=100,  # Initial value for the number of points to show
             tooltip={"placement": "bottom", "always_visible": True}
         ),
-        dbc.Button("Update Plot", id="update-plot-button", color="primary"),
+        dbc.Button("Update Plot", id="update-plot-button", style={'width': '10%', 'margin': '0 auto'}),
         html.H6("Created by Stijn Oosterlinck, Justine Rayp and Francesco Bizzarri",
-                style={'margin-top': '3.5em', 'font-size': '0.8em', 'font-weight': 'lighter'})
+                style={'margin-top': '2.5em', 'font-size': '0.8em', 'font-weight': 'lighter'})
     ]),
 ])
 
