@@ -157,17 +157,26 @@ def tsne_data(N_IMAGES_PER_CLASS):
     #     plt.imshow(img)
     #     plt.axis('off')
     # plt.show()
+
     print(f"x_train shape:{x_train.shape}")
-    model = TSNE(n_components=2)
-    images = compute_features_vectors(x_train, 'activation_14')
-    tsne = model.fit_transform(images.reshape((len(x_train), -1)))
-    x = tsne[:, 0]
-    y = tsne[:, 1]
+    softmax_tsne_x, softmax_tsne_y = tsne_intermediate_layer(x_train, 'activation_14')
     coarse_labels = y_train  # These are numbers from 0 to 19
     fine_labels = y_train_fine  # These are numbers from 0 to 99
     coarse_categories = [coarse_to_category[label] for label in coarse_labels.flatten()]  # These are strings
     fine_categories = [fine_to_cateogry[label] for label in fine_labels.flatten()]  # These are strings
-    return x, y, coarse_labels.flatten().tolist(), coarse_categories, fine_categories, x_train.reshape((len(x_train), 32 * 32 * 3))
+
+    return (softmax_tsne_x, softmax_tsne_y,                                         # t-sne of last feature vector
+            coarse_labels.flatten().tolist(), coarse_categories, fine_categories,   # Useful labels
+            x_train.reshape((len(x_train), 32 * 32 * 3)))                           # Raw image pixels
+
+def tsne_intermediate_layer(x_train, layer_name):
+    images = compute_features_vectors(x_train, layer_name)
+    model = TSNE(n_components=2)
+    tsne = model.fit_transform(images.reshape((len(x_train), -1)))
+    x = tsne[:, 0]
+    y = tsne[:, 1]
+    return x, y
+
 
 
 

@@ -9,7 +9,7 @@ from dash import Dash, dcc, html, Input, Output, State
 from import_data import tsne_data
 
 # Import data and create Pandas dataframe
-x, y, coarse_labels, coarse_categories, fine_categories, images = tsne_data(N_IMAGES_PER_CLASS=10)
+x, y, coarse_labels, coarse_categories, fine_categories, images = tsne_data(N_IMAGES_PER_CLASS=20)
 
 data = {
     't_sne_x': x,
@@ -33,7 +33,10 @@ app.layout = dbc.Container([
         dbc.Col([
             html.H6("Image Description", style={'text-align': 'center'}),
             html.Div(html.Img(id='clicked-image', style={'height': '40%', 'width': '40%', 'display': 'block', 'margin': '0 auto'})),
-            html.Div(id='image-text-description', style={'text-align': 'center'})
+            html.Div(id='image-text-description', style={'text-align': 'center'}),
+            # TODO: add here the explanation image from LIME framework (implement relative callback)
+            # html.H6("Image Explanation", style={'text-align': 'center'}),
+            # html.Div(html.Img(id='explanation-clicked-image', style={'height': '40%', 'width': '40%', 'display': 'block', 'margin': '0 auto'})),
         ], width=4),
     ]),
     dbc.Row([
