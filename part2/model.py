@@ -303,8 +303,8 @@ predicted_class = np.argmax(predictions)
 print(f"Predicted class full model: {fine_to_cateogry[predicted_class]}")
 
 # Partial model
-layer_name = 'activation_14' # This is the last layer
-intermediate_layer_model = keras.Model(inputs=classifier.model.input,
-                                       outputs=classifier.model.get_layer(layer_name).output)
-intermediate_output = intermediate_layer_model.predict(classifier.normalize_production(x))
+layer_name = 'activation_14'  # This is the last layer
+# TODO: instead of the last layer use also intermediate layers for feature visualization
+intermediate_layer_model = keras.Model(inputs=classifier.model.input, outputs=classifier.model.get_layer(layer_name).output)
+intermediate_output = intermediate_layer_model.predict(classifier.normalize_production(x)).flatten()
 print(f"Predicted class partial model: {fine_to_cateogry[np.argmax(intermediate_output)]}")
