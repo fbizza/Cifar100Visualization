@@ -9,6 +9,7 @@ from keras import regularizers
 from keras.preprocessing import image
 import numpy as np
 import keras
+from keras import Model
 
 
 fine_to_cateogry = {
@@ -216,10 +217,6 @@ class cifar100vgg:
         return model
 
     def normalize(self, X_train, X_test):
-        # this function normalize inputs for zero mean and unit variance
-        # it is used when training a model.
-        # Input: training set and test set
-        # Output: normalized training set and test set according to the trianing set statistics.
         mean = np.mean(X_train, axis=(0, 1, 2, 3))
         std = np.std(X_train, axis=(0, 1, 2, 3))
         print(mean)
@@ -229,11 +226,6 @@ class cifar100vgg:
         return X_train, X_test
 
     def normalize_production(self, x):
-        # this function is used to normalize instances in production according to saved training set statistics
-        # Input: X - a training set
-        # Output X - a normalized training set according to normalization constants.
-
-        # these values produced during first training and are general for the standard cifar10 training set normalization
         mean = 121.936
         std = 68.389
         return (x - mean) / (std + 1e-7)
@@ -296,15 +288,23 @@ class cifar100vgg:
         return model
 
 
-# Load pretrained model and predict class of an example image for testing
-model = cifar100vgg(train=False)
 
+# Load pretrained model and predict class of an example image for testing
+classifier = cifar100vgg(train=False)
+print(classifier.model.summary())
 img_path = 'example_image.png'
 img = image.load_img(img_path, target_size=(32, 32))
 x = image.img_to_array(img)
 x = np.expand_dims(x, axis=0)
 
-predictions = model.predict(x)
+# Full model
+predictions = classifier.predict(x)
 predicted_class = np.argmax(predictions)
+print(f"Predicted class full model: {fine_to_cateogry[predicted_class]}")
 
-print(f"Predicted class: {fine_to_cateogry[predicted_class]}")
+# Partial model
+layer_name = 'activation_14' # This is the last layer
+intermediate_layer_model = keras.Model(inputs=classifier.model.input,
+                                       outputs=classifier.model.get_layer(layer_name).output)
+intermediate_output = intermediate_layer_model.predict(classifier.normalize_production(x))
+print(f"Predicted class partial model: {fine_to_cateogry[np.argmax(intermediate_output)]}")
