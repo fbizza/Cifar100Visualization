@@ -181,14 +181,13 @@ class cifar100vgg:
         model.save_weights('cifar100vgg.h5')
         return model
 
+classifier = cifar100vgg(train=False)
 
 def compute_features_vectors(images, layer_name):
-    classifier = cifar100vgg(train=False)
-    # print(classifier.model.summary())
     intermediate_layer_model = keras.Model(inputs=classifier.model.input,
                                            outputs=classifier.model.get_layer(layer_name).output)
     intermediate_output = intermediate_layer_model.predict(classifier.normalize_production(images))
-    print(f"intermediate_output.shape: {intermediate_output.shape}")
+    print(f"{layer_name} output shape: {intermediate_output.shape}")
     return intermediate_output
 
 
