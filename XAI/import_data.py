@@ -2,8 +2,7 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
-from model import compute_features_vectors
-
+from model import compute_features_vectors, predict_fine_class
 coarse_to_category = {
     0: 'aquatic mammals',
     1: 'fish',
@@ -138,13 +137,13 @@ def tsne_data(N_IMAGES_PER_CLASS):
 
     # Loop over each class label and sample N_IMAGES_PER_CLASS random images over each class
     idx = np.empty(0, dtype="int8")
-    for i in range(0, len(np.unique(coarse_labels_train))):
-        idx = np.append(idx, np.random.choice(np.where((coarse_labels_train[0:len(coarse_labels_train)]) == i)[0],
+    for i in range(0, len(np.unique(coarse_labels_test))):
+        idx = np.append(idx, np.random.choice(np.where((coarse_labels_test[0:len(coarse_labels_test)]) == i)[0],
                                               N_IMAGES_PER_CLASS, replace=False))
 
-    x_train = x_train_coarse[idx]
-    y_train = coarse_labels_train[idx]
-    y_train_fine = fine_labels_train[idx]
+    x_test = x_test_coarse[idx]
+    y_test_coarse = coarse_labels_test[idx]
+    y_test_fine = fine_labels_test[idx]
 
     # #### ----- Uncomment this part to plot an example image for each class ----- #####
     #
@@ -157,25 +156,27 @@ def tsne_data(N_IMAGES_PER_CLASS):
     #     plt.imshow(img)
     #     plt.axis('off')
     # plt.show()
-
-
-    first_block_tsne_x, first_block_tsne_y = tsne_intermediate_layer(x_train, 'max_pooling2d')
-    second_block_tsne_x, second_block_tsne_y = tsne_intermediate_layer(x_train, 'max_pooling2d_2')
-    third_block_tsne_x, third_block_tsne_y = tsne_intermediate_layer(x_train, 'max_pooling2d_3')
-    fourth_block_tsne_x, fourth_block_tsne_y = tsne_intermediate_layer(x_train, 'max_pooling2d_4')
-    softmax_tsne_x, softmax_tsne_y = tsne_intermediate_layer(x_train, 'activation_14')
-    coarse_labels = y_train  # These are numbers from 0 to 19
-    fine_labels = y_train_fine  # These are numbers from 0 to 99
+    print("Predicting classes...")
+    predicted_fine_categories = predict_fine_class(x_test)
+    print("Extracting feature vectors...")
+    first_block_tsne_x, first_block_tsne_y = tsne_intermediate_layer(x_test, 'max_pooling2d')
+    second_block_tsne_x, second_block_tsne_y = tsne_intermediate_layer(x_test, 'max_pooling2d_2')
+    third_block_tsne_x, third_block_tsne_y = tsne_intermediate_layer(x_test, 'max_pooling2d_3')
+    fourth_block_tsne_x, fourth_block_tsne_y = tsne_intermediate_layer(x_test, 'max_pooling2d_4')
+    softmax_tsne_x, softmax_tsne_y = tsne_intermediate_layer(x_test, 'activation_14')
+    coarse_labels = y_test_coarse  # These are numbers from 0 to 19
+    fine_labels = y_test_fine  # These are numbers from 0 to 99
     coarse_categories = [coarse_to_category[label] for label in coarse_labels.flatten()]  # These are strings
     fine_categories = [fine_to_cateogry[label] for label in fine_labels.flatten()]  # These are strings
 
-    return (softmax_tsne_x, softmax_tsne_y,                                         # t-sne of feature vectors
-            first_block_tsne_x, first_block_tsne_y,
-            second_block_tsne_x, second_block_tsne_y,
-            third_block_tsne_x, third_block_tsne_y,
-            fourth_block_tsne_x, fourth_block_tsne_y,
-            coarse_labels.flatten().tolist(), coarse_categories, fine_categories,   # Useful labels
-            x_train.reshape((len(x_train), 32 * 32 * 3)))                           # Raw image pixels
+    return (softmax_tsne_x, softmax_tsne_y,                                         # t-sne of feature vector
+            first_block_tsne_x, first_block_tsne_y,                                 # t-sne of feature vector
+            second_block_tsne_x, second_block_tsne_y,                               # t-sne of feature vector
+            third_block_tsne_x, third_block_tsne_y,                                 # t-sne of feature vector
+            fourth_block_tsne_x, fourth_block_tsne_y,                               # t-sne of feature vector
+            predicted_fine_categories,                                              # Predicted labels
+            coarse_labels.flatten().tolist(), coarse_categories, fine_categories,   # Ground truth labels
+            x_test.reshape((len(x_test), 32 * 32 * 3)))                           # Raw image pixels
 
 
 def tsne_intermediate_layer(x_train, layer_name):

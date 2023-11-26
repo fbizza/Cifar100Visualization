@@ -15,6 +15,7 @@ from import_data import tsne_data
  t_sne_second_block_x, t_sne_second_block_y,
  t_sne_third_block_x, t_sne_third_block_y,
  t_sne_fourth_block_x, t_sne_fourth_block_y,
+ predicted_fine_categories,
  coarse_labels, coarse_categories, fine_categories, images) = tsne_data(N_IMAGES_PER_CLASS=25)
 
 data = {
@@ -28,6 +29,7 @@ data = {
     't_sne_third_block_y': t_sne_third_block_y,
     't_sne_fourth_block_x': t_sne_fourth_block_x,
     't_sne_fourth_block_y': t_sne_fourth_block_y,
+    'predicted_fine_category': predicted_fine_categories.flatten(),
     'coarse_label': coarse_labels,          # Numbers from 0 to 19
     'coarse_category': coarse_categories,   # Strings
     'fine_category': fine_categories,       # Strings
@@ -55,7 +57,7 @@ app.layout = dbc.Container([
             dcc.Dropdown(
                 id='tsne-dropdown',
                 options=[{'label': option['label'], 'value': option['value']} for option in tsne_options],
-                value='fourth_block',  # TODO: which layer should be the default one?
+                value='softmax',  # TODO: which layer should be the default one?
                 clearable=False
             ),
         ], style={'width': '100%', 'margin': '0 auto'}),
@@ -66,6 +68,7 @@ app.layout = dbc.Container([
             html.H6("Image Description", style={'text-align': 'center'}),
             html.Div(html.Img(id='clicked-image', style={'height': '40%', 'width': '40%', 'display': 'block', 'margin': '0 auto'})),
             html.Div(id='image-text-description', style={'text-align': 'center'}),
+            html.Div(id='predicted-class-description', style={'text-align': 'center'}),
             # TODO: add predicted class
             # TODO: add here the explanation image from LIME framework (implement relative callback)
             # html.H6("Image Explanation", style={'text-align': 'center'}),
@@ -78,7 +81,7 @@ app.layout = dbc.Container([
             id='max-slider',
             min=0, max=len(df.index), step=1,
             marks={0: '0', len(df.index): f'{len(df.index)}'},
-            value=300,  # Initial value for the number of points to show
+            value=len(df.index)/2,  # Initial value for the number of points to show
             tooltip={"placement": "bottom", "always_visible": True}
         ),
         dbc.Button("Update Plot", id="update-plot-button", style={'width': '10%', 'margin': '0 auto'}),
@@ -100,7 +103,7 @@ def show_clicked_image(clickData):
         encoded_image = base64.b64encode(open("clicked-image.png", 'rb').read()).decode('ascii')
         return 'data:image/png;base64,{}'.format(encoded_image)
 
-# Callback for updating image description
+# Callback for updating image ground truth description
 @app.callback(
     Output("image-text-description", 'children'),
     Input("scatter-plot", "clickData"))
@@ -108,6 +111,15 @@ def update_img_description(clickData):
     if clickData:
         fine_category = clickData['points'][0]['customdata'][1]
         return f'This picture shows a {fine_category}'
+
+# Callback for updating image predicted class description
+@app.callback(
+    Output("predicted-class-description", 'children'),
+    Input("scatter-plot", "clickData"))
+def update_predicted_class_description(clickData):
+    if clickData:
+        predicted_category = clickData['points'][0]['customdata'][2]
+        return f'The model predicted a {predicted_category}'
 
 # Callback for updating scatter plot based on slider number selection and button click
 @app.callback(
@@ -124,7 +136,7 @@ def update_scatter_plot_on_button_click(n_clicks, selected_tsne, value):
     fig = px.scatter(selected_points, x=f't_sne_{selected_tsne}_x', y=f't_sne_{selected_tsne}_y',
                      color='coarse_category',
                      hover_data=['coarse_category'],
-                     custom_data=['image', 'fine_category'],
+                     custom_data=['image', 'fine_category', 'predicted_fine_category'],
                      labels={
                          'coarse_category': 'Coarse Category',
                          f't_sne_{selected_tsne}_x': 't-SNE first dimension',
