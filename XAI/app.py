@@ -69,7 +69,6 @@ app.layout = dbc.Container([
             html.Div(html.Img(id='clicked-image', style={'height': '40%', 'width': '40%', 'display': 'block', 'margin': '0 auto'})),
             html.Div(id='image-text-description', style={'text-align': 'center'}),
             html.Div(id='predicted-class-description', style={'text-align': 'center'}),
-            # TODO: add predicted class
             # TODO: add here the explanation image from LIME framework (implement relative callback)
             # html.H6("Image Explanation", style={'text-align': 'center'}),
             # html.Div(html.Img(id='explanation-clicked-image', style={'height': '40%', 'width': '40%', 'display': 'block', 'margin': '0 auto'})),
