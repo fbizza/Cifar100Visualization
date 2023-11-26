@@ -192,6 +192,7 @@ def compute_features_vectors(images, layer_name):
 
 
 
-
+def predict_classes(images, norm):
+    return classifier.predict(images, norm)
 
 

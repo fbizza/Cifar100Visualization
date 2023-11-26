@@ -7,7 +7,7 @@ import base64
 import dash
 from dash import Dash, dcc, html, Input, Output, State
 from import_data import tsne_data
-
+from explanation_v2 import generate_heatmap_and_plot
 
 # Import data and create Pandas dataframe
 (t_sne_softmax_x, t_sne_softmax_y,
@@ -15,7 +15,7 @@ from import_data import tsne_data
  t_sne_second_block_x, t_sne_second_block_y,
  t_sne_third_block_x, t_sne_third_block_y,
  t_sne_fourth_block_x, t_sne_fourth_block_y,
- coarse_labels, coarse_categories, fine_categories, images) = tsne_data(N_IMAGES_PER_CLASS=25)
+ coarse_labels, coarse_categories, fine_categories, images, fine_categories_preds) = tsne_data(N_IMAGES_PER_CLASS=25)
 
 data = {
     't_sne_softmax_x': t_sne_softmax_x,
@@ -31,7 +31,8 @@ data = {
     'coarse_label': coarse_labels,          # Numbers from 0 to 19
     'coarse_category': coarse_categories,   # Strings
     'fine_category': fine_categories,       # Strings
-    'image': images.tolist()                # Raw pixels values
+    'image': images.tolist(),                # Raw pixels values
+    'prediction_fine': fine_categories_preds
 }
 
 tsne_options = [
@@ -43,6 +44,9 @@ tsne_options = [
 ]
 
 df = pd.DataFrame(data)
+
+# Add a column to indicate whether the prediction was correct
+df['correct_prediction'] = df['fine_category'] == df['prediction_fine']
 
 # Create app
 app = Dash(__name__, external_stylesheets=[dbc.themes.LITERA])
@@ -61,6 +65,21 @@ app.layout = dbc.Container([
         ], style={'width': '100%', 'margin': '0 auto'}),
     ]),
     dbc.Row([
+        html.Div([
+            dcc.Dropdown(
+                id='pred-dropdown',
+                options=[{'label': 'All predictions', 'value': 'all',
+                          },
+                          {'label': 'Correct predictions', 'value': 'correct',
+                          },
+                          {'label': 'Wrong predictions', 'value': 'wrong',
+                          },],
+                value='all', 
+                clearable=False
+            ),
+        ], style={'width': '100%', 'margin': '0 auto'}),
+    ]),
+    dbc.Row([
         dbc.Col(dcc.Graph(id="scatter-plot"), width=8),
         dbc.Col([
             html.H6("Image Description", style={'text-align': 'center'}),
@@ -69,7 +88,8 @@ app.layout = dbc.Container([
             # TODO: add predicted class
             # TODO: add here the explanation image from LIME framework (implement relative callback)
             # html.H6("Image Explanation", style={'text-align': 'center'}),
-            # html.Div(html.Img(id='explanation-clicked-image', style={'height': '40%', 'width': '40%', 'display': 'block', 'margin': '0 auto'})),
+            html.Div(html.Img(id='explanation-clicked-image', style={'height': '40%', 'width': '40%', 'display': 'block', 'margin': '0 auto'})),
+            dbc.Button("Get explanation", id="explanation-button", style={'width': '40%', 'margin': '0 auto'})
         ], width=4),
     ]),
     dbc.Row([
@@ -85,6 +105,10 @@ app.layout = dbc.Container([
         html.H6("Created by Stijn Oosterlinck, Justine Rayp and Francesco Bizzarri",
                 style={'margin-top': '2.5em', 'font-size': '0.8em', 'font-weight': 'lighter'})
     ]),
+    dbc.Row([
+
+
+    ])
 ])
 
 
@@ -97,8 +121,25 @@ def show_clicked_image(clickData):
         image_data = np.array(clickData['points'][0]['customdata'][0], dtype='uint8')
         image = image_data.reshape(32, 32, 3)
         plt.imsave("clicked-image.png", image)
+        #generate_heatmap_and_plot(image)
         encoded_image = base64.b64encode(open("clicked-image.png", 'rb').read()).decode('ascii')
         return 'data:image/png;base64,{}'.format(encoded_image)
+    
+
+# Callback for showing image of clicked point
+@app.callback(
+    Output("explanation-clicked-image", 'src'),
+    Input("explanation-button", "n_clicks"),
+    State("scatter-plot", "clickData"))
+def show_explanation_image(n_clicks, clickData):
+    if clickData:
+        image_data = np.array(clickData['points'][0]['customdata'][0], dtype='uint8')
+        image = image_data.reshape(32, 32, 3)
+        #plt.imsave("clicked-image.png", image)
+        generate_heatmap_and_plot(image)
+        encoded_image = base64.b64encode(open("cam.jpg", 'rb').read()).decode('ascii')
+        return 'data:image/png;base64,{}'.format(encoded_image)
+
 
 # Callback for updating image description
 @app.callback(
@@ -114,27 +155,54 @@ def update_img_description(clickData):
     Output("scatter-plot", "figure"),
     Input("update-plot-button", "n_clicks"),
     Input("tsne-dropdown", "value"),  # Change from tsne-slider to tsne-dropdown
+    Input("pred-dropdown", "value"),
     State("max-slider", "value")
 )
-def update_scatter_plot_on_button_click(n_clicks, selected_tsne, value):
+def update_scatter_plot_on_button_click(n_clicks, selected_tsne, preds, value):
     num_points_to_show = value  # Value from slider
 
     selected_points = df.sample(n=num_points_to_show)
 
+    if preds == 'all':
+        selected_points['opacity_value'] = [1] * len(selected_points)
+    elif preds == 'correct':
+        selected_points['opacity_value'] = [1 if correct else 0.1 for correct in selected_points['correct_prediction']]
+    elif preds == 'wrong':
+        selected_points['opacity_value'] = [0.1 if correct else 1 for correct in selected_points['correct_prediction']]
+    else:
+        selected_points['opacity_value'] = [1] * len(selected_points)
+
+    # Get unique values in the 'coarse_category' column
+    unique_categories = df['coarse_category'].unique()
+
+    # Create a color mapping dictionary using a color sequence
+    color_mapping = dict(zip(unique_categories, px.colors.qualitative.Light24[:len(unique_categories)]))
+
     fig = px.scatter(selected_points, x=f't_sne_{selected_tsne}_x', y=f't_sne_{selected_tsne}_y',
                      color='coarse_category',
+                     opacity= selected_points['opacity_value'].values,
+                     color_discrete_map=color_mapping,
                      hover_data=['coarse_category'],
                      custom_data=['image', 'fine_category'],
                      labels={
                          'coarse_category': 'Coarse Category',
                          f't_sne_{selected_tsne}_x': 't-SNE first dimension',
-                         f't_sne_{selected_tsne}_y': 't-SNE second dimension'},
-                     color_discrete_sequence=px.colors.qualitative.Light24)
+                         f't_sne_{selected_tsne}_y': 't-SNE second dimension'},)
+                    
+                     #color_discrete_sequence=px.colors.qualitative.Light24)
+    
 
     fig.update_xaxes(showgrid=False)
     fig.update_yaxes(showgrid=False)
 
+    
+
+
+
     return fig
+
+
+
 
 
 app.run_server(debug=True)

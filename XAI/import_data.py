@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
-from model import compute_features_vectors
+from model import compute_features_vectors, predict_classes
 
 coarse_to_category = {
     0: 'aquatic mammals',
@@ -164,10 +164,12 @@ def tsne_data(N_IMAGES_PER_CLASS):
     third_block_tsne_x, third_block_tsne_y = tsne_intermediate_layer(x_train, 'max_pooling2d_3')
     fourth_block_tsne_x, fourth_block_tsne_y = tsne_intermediate_layer(x_train, 'max_pooling2d_4')
     softmax_tsne_x, softmax_tsne_y = tsne_intermediate_layer(x_train, 'activation_14')
+    fine_label_preds = make_predictions(x_train)
     coarse_labels = y_train  # These are numbers from 0 to 19
     fine_labels = y_train_fine  # These are numbers from 0 to 99
     coarse_categories = [coarse_to_category[label] for label in coarse_labels.flatten()]  # These are strings
     fine_categories = [fine_to_cateogry[label] for label in fine_labels.flatten()]  # These are strings
+    fine_categories_preds = [fine_to_cateogry[label] for label in fine_label_preds] 
 
     return (softmax_tsne_x, softmax_tsne_y,                                         # t-sne of feature vectors
             first_block_tsne_x, first_block_tsne_y,
@@ -175,7 +177,8 @@ def tsne_data(N_IMAGES_PER_CLASS):
             third_block_tsne_x, third_block_tsne_y,
             fourth_block_tsne_x, fourth_block_tsne_y,
             coarse_labels.flatten().tolist(), coarse_categories, fine_categories,   # Useful labels
-            x_train.reshape((len(x_train), 32 * 32 * 3)))                           # Raw image pixels
+            x_train.reshape((len(x_train), 32 * 32 * 3)), # Raw image pixels
+            fine_categories_preds)                           
 
 
 def tsne_intermediate_layer(x_train, layer_name):
@@ -187,6 +190,12 @@ def tsne_intermediate_layer(x_train, layer_name):
     return x, y
 
 
-
+def make_predictions(x_train):
+    # contains distribution (array of 100 (0,1) values for every image) -> predicts fine categories!
+    distr = predict_classes(x_train.astype('float32'), True)
+    r = []
+    for pred in distr:
+        r.append(np.argmax(pred))
+    return r
 
 
