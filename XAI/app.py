@@ -154,7 +154,7 @@ def update_predicted_class_description(clickData):
 def update_scatter_plot_on_button_click(n_clicks, selected_tsne, value):
     num_points_to_show = value  # Value from slider
 
-    selected_points = df.sample(n=num_points_to_show)
+    selected_points = df.head(n=num_points_to_show)
 
     # Get unique values in the 'coarse_category' column
     unique_categories = df['coarse_category'].unique()
