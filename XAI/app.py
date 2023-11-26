@@ -15,7 +15,8 @@ from explanation_v2 import generate_heatmap_and_plot
  t_sne_second_block_x, t_sne_second_block_y,
  t_sne_third_block_x, t_sne_third_block_y,
  t_sne_fourth_block_x, t_sne_fourth_block_y,
- coarse_labels, coarse_categories, fine_categories, images, fine_categories_preds) = tsne_data(N_IMAGES_PER_CLASS=25)
+ predicted_fine_categories,
+ coarse_labels, coarse_categories, fine_categories, images) = tsne_data(N_IMAGES_PER_CLASS=25)
 
 data = {
     't_sne_softmax_x': t_sne_softmax_x,
@@ -28,11 +29,12 @@ data = {
     't_sne_third_block_y': t_sne_third_block_y,
     't_sne_fourth_block_x': t_sne_fourth_block_x,
     't_sne_fourth_block_y': t_sne_fourth_block_y,
+    'predicted_fine_category': predicted_fine_categories.flatten(),
     'coarse_label': coarse_labels,          # Numbers from 0 to 19
     'coarse_category': coarse_categories,   # Strings
     'fine_category': fine_categories,       # Strings
     'image': images.tolist(),                # Raw pixels values
-    'prediction_fine': fine_categories_preds
+
 }
 
 tsne_options = [
@@ -45,8 +47,6 @@ tsne_options = [
 
 df = pd.DataFrame(data)
 
-# Add a column to indicate whether the prediction was correct
-df['correct_prediction'] = df['fine_category'] == df['prediction_fine']
 
 # Create app
 app = Dash(__name__, external_stylesheets=[dbc.themes.LITERA])
@@ -59,22 +59,7 @@ app.layout = dbc.Container([
             dcc.Dropdown(
                 id='tsne-dropdown',
                 options=[{'label': option['label'], 'value': option['value']} for option in tsne_options],
-                value='fourth_block',  # TODO: which layer should be the default one?
-                clearable=False
-            ),
-        ], style={'width': '100%', 'margin': '0 auto'}),
-    ]),
-    dbc.Row([
-        html.Div([
-            dcc.Dropdown(
-                id='pred-dropdown',
-                options=[{'label': 'All predictions', 'value': 'all',
-                          },
-                          {'label': 'Correct predictions', 'value': 'correct',
-                          },
-                          {'label': 'Wrong predictions', 'value': 'wrong',
-                          },],
-                value='all', 
+                value='softmax',  # TODO: which layer should be the default one?
                 clearable=False
             ),
         ], style={'width': '100%', 'margin': '0 auto'}),
@@ -85,7 +70,7 @@ app.layout = dbc.Container([
             html.H6("Image Description", style={'text-align': 'center'}),
             html.Div(html.Img(id='clicked-image', style={'height': '40%', 'width': '40%', 'display': 'block', 'margin': '0 auto'})),
             html.Div(id='image-text-description', style={'text-align': 'center'}),
-            # TODO: add predicted class
+            html.Div(id='predicted-class-description', style={'text-align': 'center'}),
             # TODO: add here the explanation image from LIME framework (implement relative callback)
             # html.H6("Image Explanation", style={'text-align': 'center'}),
             html.Div(html.Img(id='explanation-clicked-image', style={'height': '40%', 'width': '40%', 'display': 'block', 'margin': '0 auto'})),
@@ -98,7 +83,7 @@ app.layout = dbc.Container([
             id='max-slider',
             min=0, max=len(df.index), step=1,
             marks={0: '0', len(df.index): f'{len(df.index)}'},
-            value=300,  # Initial value for the number of points to show
+            value=len(df.index)/2,  # Initial value for the number of points to show
             tooltip={"placement": "bottom", "always_visible": True}
         ),
         dbc.Button("Update Plot", id="update-plot-button", style={'width': '10%', 'margin': '0 auto'}),
@@ -141,7 +126,7 @@ def show_explanation_image(n_clicks, clickData):
         return 'data:image/png;base64,{}'.format(encoded_image)
 
 
-# Callback for updating image description
+# Callback for updating image ground truth description
 @app.callback(
     Output("image-text-description", 'children'),
     Input("scatter-plot", "clickData"))
@@ -150,27 +135,26 @@ def update_img_description(clickData):
         fine_category = clickData['points'][0]['customdata'][1]
         return f'This picture shows a {fine_category}'
 
+# Callback for updating image predicted class description
+@app.callback(
+    Output("predicted-class-description", 'children'),
+    Input("scatter-plot", "clickData"))
+def update_predicted_class_description(clickData):
+    if clickData:
+        predicted_category = clickData['points'][0]['customdata'][2]
+        return f'The model predicted a {predicted_category}'
+
 # Callback for updating scatter plot based on slider number selection and button click
 @app.callback(
     Output("scatter-plot", "figure"),
     Input("update-plot-button", "n_clicks"),
     Input("tsne-dropdown", "value"),  # Change from tsne-slider to tsne-dropdown
-    Input("pred-dropdown", "value"),
     State("max-slider", "value")
 )
-def update_scatter_plot_on_button_click(n_clicks, selected_tsne, preds, value):
+def update_scatter_plot_on_button_click(n_clicks, selected_tsne, value):
     num_points_to_show = value  # Value from slider
 
     selected_points = df.sample(n=num_points_to_show)
-
-    if preds == 'all':
-        selected_points['opacity_value'] = [1] * len(selected_points)
-    elif preds == 'correct':
-        selected_points['opacity_value'] = [1 if correct else 0.1 for correct in selected_points['correct_prediction']]
-    elif preds == 'wrong':
-        selected_points['opacity_value'] = [0.1 if correct else 1 for correct in selected_points['correct_prediction']]
-    else:
-        selected_points['opacity_value'] = [1] * len(selected_points)
 
     # Get unique values in the 'coarse_category' column
     unique_categories = df['coarse_category'].unique()
@@ -180,10 +164,10 @@ def update_scatter_plot_on_button_click(n_clicks, selected_tsne, preds, value):
 
     fig = px.scatter(selected_points, x=f't_sne_{selected_tsne}_x', y=f't_sne_{selected_tsne}_y',
                      color='coarse_category',
-                     opacity= selected_points['opacity_value'].values,
+                 
                      color_discrete_map=color_mapping,
                      hover_data=['coarse_category'],
-                     custom_data=['image', 'fine_category'],
+                     custom_data=['image', 'fine_category', 'predicted_fine_category'],
                      labels={
                          'coarse_category': 'Coarse Category',
                          f't_sne_{selected_tsne}_x': 't-SNE first dimension',
