@@ -48,6 +48,8 @@ tsne_options = [
 
 df = pd.DataFrame(data)
 
+# Add a column to indicate whether the prediction was correct
+df['correct_prediction'] = df['predicted_fine_category'] == df['fine_category']
 
 # Create app
 app = Dash(__name__, external_stylesheets=[dbc.themes.LITERA])
@@ -61,6 +63,21 @@ app.layout = dbc.Container([
                 id='tsne-dropdown',
                 options=[{'label': option['label'], 'value': option['value']} for option in tsne_options],
                 value='softmax',
+                clearable=False
+            ),
+        ], style={'width': '100%', 'margin': '0 auto'}),
+    ]),
+    dbc.Row([
+        html.Div([
+            dcc.Dropdown(
+                id='pred-dropdown',
+                options=[{'label': 'All predictions', 'value': 'all',
+                          },
+                          {'label': 'Correct predictions', 'value': 'correct',
+                          },
+                          {'label': 'Wrong predictions', 'value': 'wrong',
+                          },],
+                value='all', 
                 clearable=False
             ),
         ], style={'width': '100%', 'margin': '0 auto'}),
@@ -158,14 +175,19 @@ def update_predicted_class_description(clickData):
 @app.callback(
     Output("scatter-plot", "figure"),
     Input("update-plot-button", "n_clicks"),
+    Input("pred-dropdown", "value"),
     Input("tsne-dropdown", "value"),  # Change from tsne-slider to tsne-dropdown
     State("max-slider", "value")
 )
-def update_scatter_plot_on_button_click(n_clicks, selected_tsne, value):
+def update_scatter_plot_on_button_click(n_clicks, preds,selected_tsne, value):
     num_points_to_show = value  # Value from slider
 
     selected_points = df.head(n=num_points_to_show)
 
+    if preds == 'correct':
+        selected_points = selected_points[selected_points['correct_prediction'] == True]
+    elif preds == 'wrong':
+        selected_points = selected_points[selected_points['correct_prediction'] == False]
     # Get unique values in the 'coarse_category' column
     unique_categories = df['coarse_category'].unique()
 
@@ -174,7 +196,6 @@ def update_scatter_plot_on_button_click(n_clicks, selected_tsne, value):
 
     fig = px.scatter(selected_points, x=f't_sne_{selected_tsne}_x', y=f't_sne_{selected_tsne}_y',
                      color='coarse_category',
-                 
                      color_discrete_map=color_mapping,
                      hover_data=['coarse_category'],
                      custom_data=['image', 'fine_category', 'predicted_fine_category'],
