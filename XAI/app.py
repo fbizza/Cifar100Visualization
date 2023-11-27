@@ -7,6 +7,7 @@ import base64
 import dash
 from dash import Dash, dcc, html, Input, Output, State
 from import_data import tsne_data
+from lime_explainer import lime_explain_img
 from explanation_v2 import generate_heatmap_and_plot
 
 # Import data and create Pandas dataframe
@@ -59,7 +60,7 @@ app.layout = dbc.Container([
             dcc.Dropdown(
                 id='tsne-dropdown',
                 options=[{'label': option['label'], 'value': option['value']} for option in tsne_options],
-                value='softmax',  # TODO: which layer should be the default one?
+                value='softmax',
                 clearable=False
             ),
         ], style={'width': '100%', 'margin': '0 auto'}),
@@ -71,10 +72,12 @@ app.layout = dbc.Container([
             html.Div(html.Img(id='clicked-image', style={'height': '40%', 'width': '40%', 'display': 'block', 'margin': '0 auto'})),
             html.Div(id='image-text-description', style={'text-align': 'center'}),
             html.Div(id='predicted-class-description', style={'text-align': 'center'}),
-            # TODO: add here the explanation image from LIME framework (implement relative callback)
-            # html.H6("Image Explanation", style={'text-align': 'center'}),
-            html.Div(html.Img(id='explanation-clicked-image', style={'height': '40%', 'width': '40%', 'display': 'block', 'margin': '0 auto'})),
-            dbc.Button("Get explanation", id="explanation-button", style={'width': '40%', 'margin': '0 auto'})
+            html.Div(dbc.Button("Get explanation", id="explanation-button", style={'width': '40%'}), style={'text-align': 'center'}),
+            dbc.Row([
+                dbc.Col(html.Div(html.Img(id='explanation-clicked-image', style={'height': '90%', 'width': '90%', 'display': 'block', 'margin': '0 auto'}))),
+                dbc.Col(html.Div(html.Img(id='lime-explanation-clicked-image', style={'height': '90%', 'width': '90%', 'display': 'block', 'margin': '0 auto'})))
+            ]),
+
         ], width=4),
     ]),
     dbc.Row([
@@ -90,10 +93,6 @@ app.layout = dbc.Container([
         html.H6("Created by Stijn Oosterlinck, Justine Rayp and Francesco Bizzarri",
                 style={'margin-top': '2.5em', 'font-size': '0.8em', 'font-weight': 'lighter'})
     ]),
-    dbc.Row([
-
-
-    ])
 ])
 
 
@@ -106,12 +105,11 @@ def show_clicked_image(clickData):
         image_data = np.array(clickData['points'][0]['customdata'][0], dtype='uint8')
         image = image_data.reshape(32, 32, 3)
         plt.imsave("clicked-image.png", image)
-        #generate_heatmap_and_plot(image)
         encoded_image = base64.b64encode(open("clicked-image.png", 'rb').read()).decode('ascii')
         return 'data:image/png;base64,{}'.format(encoded_image)
     
 
-# Callback for showing image of clicked point
+# Callback for showing explanation of clicked point
 @app.callback(
     Output("explanation-clicked-image", 'src'),
     Input("explanation-button", "n_clicks"),
@@ -120,11 +118,23 @@ def show_explanation_image(n_clicks, clickData):
     if clickData:
         image_data = np.array(clickData['points'][0]['customdata'][0], dtype='uint8')
         image = image_data.reshape(32, 32, 3)
-        #plt.imsave("clicked-image.png", image)
         generate_heatmap_and_plot(image)
         encoded_image = base64.b64encode(open("cam.jpg", 'rb').read()).decode('ascii')
         return 'data:image/png;base64,{}'.format(encoded_image)
 
+# Callback for showing lime explanation of clicked point
+@app.callback(
+    Output("lime-explanation-clicked-image", 'src'),
+    Input("explanation-button", "n_clicks"),
+    State("scatter-plot", "clickData"))
+def show_explanation_image(n_clicks, clickData):
+    if clickData:
+        image_data = np.array(clickData['points'][0]['customdata'][0], dtype='uint8')
+        image = image_data.reshape(32, 32, 3)
+        image = lime_explain_img(image)
+        plt.imsave("lime-explanation-image.png", image)
+        encoded_image = base64.b64encode(open("lime-explanation-image.png", 'rb').read()).decode('ascii')
+        return 'data:image/png;base64,{}'.format(encoded_image)
 
 # Callback for updating image ground truth description
 @app.callback(
@@ -174,15 +184,9 @@ def update_scatter_plot_on_button_click(n_clicks, selected_tsne, value):
                          f't_sne_{selected_tsne}_y': 't-SNE second dimension'},)
                     
                      #color_discrete_sequence=px.colors.qualitative.Light24)
-    
 
     fig.update_xaxes(showgrid=False)
     fig.update_yaxes(showgrid=False)
-
-    
-
-
-
     return fig
 
 
