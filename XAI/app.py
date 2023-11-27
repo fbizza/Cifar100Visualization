@@ -9,6 +9,7 @@ from dash import Dash, dcc, html, Input, Output, State
 from import_data import tsne_data
 from lime_explainer import lime_explain_img
 from explanation_v2 import generate_heatmap_and_plot
+from model import prediction_distribution
 
 # Import data and create Pandas dataframe
 (t_sne_softmax_x, t_sne_softmax_y,
@@ -91,9 +92,10 @@ app.layout = dbc.Container([
             html.Div(id='predicted-class-description', style={'text-align': 'center'}),
             html.Div(dbc.Button("Get explanation", id="explanation-button", style={'width': '40%'}), style={'text-align': 'center'}),
             dbc.Row([
-                dbc.Col(html.Div(html.Img(id='explanation-clicked-image', style={'height': '90%', 'width': '90%', 'display': 'block', 'margin': '0 auto'}))),
+                dbc.Col(html.Div(html.Img(id='softmax-distribution-clicked-image', style={'height': '110%', 'width': '110%', 'display': 'block', 'margin': '0 auto'}))),
                 dbc.Col(html.Div(html.Img(id='lime-explanation-clicked-image', style={'height': '90%', 'width': '90%', 'display': 'block', 'margin': '0 auto'})))
             ]),
+      
 
         ], width=4),
     ]),
@@ -125,19 +127,19 @@ def show_clicked_image(clickData):
         encoded_image = base64.b64encode(open("clicked-image.png", 'rb').read()).decode('ascii')
         return 'data:image/png;base64,{}'.format(encoded_image)
     
-
-# Callback for showing explanation of clicked point
+# Callback for showing lime explanation of clicked point
 @app.callback(
-    Output("explanation-clicked-image", 'src'),
+    Output("softmax-distribution-clicked-image", 'src'),
     Input("explanation-button", "n_clicks"),
     State("scatter-plot", "clickData"))
 def show_explanation_image(n_clicks, clickData):
     if clickData:
         image_data = np.array(clickData['points'][0]['customdata'][0], dtype='uint8')
         image = image_data.reshape(32, 32, 3)
-        generate_heatmap_and_plot(image)
-        encoded_image = base64.b64encode(open("cam.jpg", 'rb').read()).decode('ascii')
+        prediction_distribution(image, top=3)
+        encoded_image = base64.b64encode(open("prediction-distribution-image.png", 'rb').read()).decode('ascii')
         return 'data:image/png;base64,{}'.format(encoded_image)
+
 
 # Callback for showing lime explanation of clicked point
 @app.callback(

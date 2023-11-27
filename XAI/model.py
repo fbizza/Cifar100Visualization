@@ -9,6 +9,7 @@ from keras import regularizers
 from keras.preprocessing import image
 import numpy as np
 import keras
+import matplotlib.pyplot as plt
 
 
 fine_to_cateogry = {
@@ -306,3 +307,25 @@ def predict_classes(images, norm):
     return classifier.predict(images, norm)
 
 
+def prediction_distribution(image, top):
+    array = np.expand_dims(image, axis=0)
+
+
+    predictions = classifier.predict(array)
+    probabilities = predictions.reshape(-1)  # Reshape to 1D array
+
+    top_indices = np.argsort(probabilities)[-top:][::-1]
+    get_class_name = np.vectorize(lambda index: fine_to_cateogry[index])
+    top_classes = get_class_name(top_indices)
+
+    fig, ax = plt.subplots()
+    top_probabilities = probabilities[top_indices]
+
+    plt.bar(top_classes, top_probabilities)
+    plt.xlabel('Class')
+    plt.ylabel('Probability')
+    plt.title('Top n Probabilities')
+    plt.xticks(rotation=45, ha='right')  
+    plt.savefig('prediction-distribution-image.png', bbox_inches='tight')
+
+    
