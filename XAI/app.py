@@ -8,7 +8,6 @@ import dash
 from dash import Dash, dcc, html, Input, Output, State
 from import_data import tsne_data
 from lime_explainer import lime_explain_img
-from explanation_v2 import generate_heatmap_and_plot
 from model import prediction_distribution
 
 # Import data and create Pandas dataframe
@@ -35,7 +34,7 @@ data = {
     'coarse_label': coarse_labels,          # Numbers from 0 to 19
     'coarse_category': coarse_categories,   # Strings
     'fine_category': fine_categories,       # Strings
-    'image': images.tolist(),                # Raw pixels values
+    'image': images.tolist(),               # Raw pixels values
 
 }
 
@@ -56,33 +55,30 @@ df['correct_prediction'] = df['predicted_fine_category'] == df['fine_category']
 app = Dash(__name__, external_stylesheets=[dbc.themes.LITERA])
 
 app.layout = dbc.Container([
-    html.H3('Interactive t-SNE plot of CIFAR-100 dataset'),
-    html.H6('Click on single points to display their descriptions', style={'opacity': '0.80'}),
+    html.H4('Interactive t-SNE plot of CIFAR-100 dataset'),
+    html.H6('Click on single points to display their descriptions. Then get the model explanation', style={'opacity': '0.80'}),
     dbc.Row([
-        html.Div([
+            dbc.Col(html.Div([
             dcc.Dropdown(
                 id='tsne-dropdown',
                 options=[{'label': option['label'], 'value': option['value']} for option in tsne_options],
                 value='softmax',
                 clearable=False
             ),
-        ], style={'width': '100%', 'margin': '0 auto'}),
+        ], style={'width': '100%', 'margin': '0 auto'}), width=6),
+    dbc.Col(html.Div([
+                dcc.Dropdown(
+                    id='pred-dropdown',
+                    options=[{'label': 'All predictions', 'value': 'all'},
+                              {'label': 'Correct predictions', 'value': 'correct'},
+                              {'label': 'Wrong predictions', 'value': 'wrong'}],
+                    value='all',
+                    clearable=False
+                ),
+            ], style={'width': '100%', 'margin': '0 auto'}), width=6),
+
     ]),
-    dbc.Row([
-        html.Div([
-            dcc.Dropdown(
-                id='pred-dropdown',
-                options=[{'label': 'All predictions', 'value': 'all',
-                          },
-                          {'label': 'Correct predictions', 'value': 'correct',
-                          },
-                          {'label': 'Wrong predictions', 'value': 'wrong',
-                          },],
-                value='all', 
-                clearable=False
-            ),
-        ], style={'width': '100%', 'margin': '0 auto'}),
-    ]),
+
     dbc.Row([
         dbc.Col(dcc.Graph(id="scatter-plot"), width=8),
         dbc.Col([
@@ -99,8 +95,21 @@ app.layout = dbc.Container([
 
         ], width=4),
     ]),
+    # dbc.Row([
+    #         html.H6("Type of points to show:", style={'opacity': '0.80'}),
+    #         html.Div([
+    #             dcc.Dropdown(
+    #                 id='pred-dropdown',
+    #                 options=[{'label': 'All predictions', 'value': 'all'},
+    #                           {'label': 'Correct predictions', 'value': 'correct'},
+    #                           {'label': 'Wrong predictions', 'value': 'wrong'}],
+    #                 value='all',
+    #                 clearable=False
+    #             ),
+    #         ], style={'width': '100%', 'margin': '0 auto'}),
+    #     ]),
     dbc.Row([
-        html.H5("Number of points to show:", style={'text-align': 'center'}),
+        html.H6("Number of points to show:", style={'text-align': 'center', 'opacity': '0.80'}),
         dcc.Slider(
             id='max-slider',
             min=0, max=len(df.index), step=1,
@@ -127,12 +136,12 @@ def show_clicked_image(clickData):
         encoded_image = base64.b64encode(open("clicked-image.png", 'rb').read()).decode('ascii')
         return 'data:image/png;base64,{}'.format(encoded_image)
     
-# Callback for showing lime explanation of clicked point
+# Callback for showing prediction distribution of clicked point
 @app.callback(
     Output("softmax-distribution-clicked-image", 'src'),
     Input("explanation-button", "n_clicks"),
     State("scatter-plot", "clickData"))
-def show_explanation_image(n_clicks, clickData):
+def show_distribution_image(n_clicks, clickData):
     if clickData:
         image_data = np.array(clickData['points'][0]['customdata'][0], dtype='uint8')
         image = image_data.reshape(32, 32, 3)
@@ -178,7 +187,7 @@ def update_predicted_class_description(clickData):
     Output("scatter-plot", "figure"),
     Input("update-plot-button", "n_clicks"),
     Input("pred-dropdown", "value"),
-    Input("tsne-dropdown", "value"),  # Change from tsne-slider to tsne-dropdown
+    Input("tsne-dropdown", "value"),
     State("max-slider", "value")
 )
 def update_scatter_plot_on_button_click(n_clicks, preds,selected_tsne, value):
@@ -190,10 +199,8 @@ def update_scatter_plot_on_button_click(n_clicks, preds,selected_tsne, value):
         selected_points = selected_points[selected_points['correct_prediction'] == True]
     elif preds == 'wrong':
         selected_points = selected_points[selected_points['correct_prediction'] == False]
-    # Get unique values in the 'coarse_category' column
-    unique_categories = df['coarse_category'].unique()
 
-    # Create a color mapping dictionary using a color sequence
+    unique_categories = df['coarse_category'].unique()
     color_mapping = dict(zip(unique_categories, px.colors.qualitative.Light24[:len(unique_categories)]))
 
     fig = px.scatter(selected_points, x=f't_sne_{selected_tsne}_x', y=f't_sne_{selected_tsne}_y',
@@ -205,14 +212,10 @@ def update_scatter_plot_on_button_click(n_clicks, preds,selected_tsne, value):
                          'coarse_category': 'Coarse Category',
                          f't_sne_{selected_tsne}_x': 't-SNE first dimension',
                          f't_sne_{selected_tsne}_y': 't-SNE second dimension'},)
-                    
-                     #color_discrete_sequence=px.colors.qualitative.Light24)
 
     fig.update_xaxes(showgrid=False)
     fig.update_yaxes(showgrid=False)
     return fig
-
-
 
 
 
