@@ -56,9 +56,10 @@ app = Dash(__name__, external_stylesheets=[dbc.themes.LITERA])
 
 app.layout = dbc.Container([
     html.H4('Interactive t-SNE plot of CIFAR-100 dataset'),
-    html.H6('Click on single points to display their descriptions. Then get the model explanation', style={'opacity': '0.80'}),
+    html.H6('Click on single points to display their descriptions. Then get the model explanation', style={'opacity': '0.90'}),
     dbc.Row([
             dbc.Col(html.Div([
+            html.H6('Select intermediate layer', style={'opacity': '0.80'}),
             dcc.Dropdown(
                 id='tsne-dropdown',
                 options=[{'label': option['label'], 'value': option['value']} for option in tsne_options],
@@ -67,6 +68,7 @@ app.layout = dbc.Container([
             ),
         ], style={'width': '100%', 'margin': '0 auto'}), width=6),
     dbc.Col(html.Div([
+                html.H6('Select on predictions', style={'opacity': '0.80'}),
                 dcc.Dropdown(
                     id='pred-dropdown',
                     options=[{'label': 'All predictions', 'value': 'all'},
@@ -95,19 +97,6 @@ app.layout = dbc.Container([
 
         ], width=4),
     ]),
-    # dbc.Row([
-    #         html.H6("Type of points to show:", style={'opacity': '0.80'}),
-    #         html.Div([
-    #             dcc.Dropdown(
-    #                 id='pred-dropdown',
-    #                 options=[{'label': 'All predictions', 'value': 'all'},
-    #                           {'label': 'Correct predictions', 'value': 'correct'},
-    #                           {'label': 'Wrong predictions', 'value': 'wrong'}],
-    #                 value='all',
-    #                 clearable=False
-    #             ),
-    #         ], style={'width': '100%', 'margin': '0 auto'}),
-    #     ]),
     dbc.Row([
         html.H6("Number of points to show:", style={'text-align': 'center', 'opacity': '0.80'}),
         dcc.Slider(

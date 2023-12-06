@@ -291,7 +291,6 @@ def compute_features_vectors(images, layer_name):
     intermediate_layer_model = keras.Model(inputs=classifier.model.input,
                                            outputs=classifier.model.get_layer(layer_name).output)
     intermediate_output = intermediate_layer_model.predict(classifier.normalize_production(images))
-    print(f"{layer_name} output shape: {intermediate_output.shape}")
     return intermediate_output
 
 def predict_fine_class(images):
@@ -324,7 +323,7 @@ def prediction_distribution(image, top):
     plt.bar(top_classes, top_probabilities)
     plt.xlabel('Class')
     plt.ylabel('Probability')
-    plt.title('Top n Probabilities')
+    plt.title('Top 3 Probabilities')
     plt.xticks(rotation=45, ha='right')  
     plt.savefig('prediction-distribution-image.png', bbox_inches='tight')
 

@@ -1,6 +1,5 @@
 import tensorflow as tf
 import numpy as np
-import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 from model import compute_features_vectors, predict_fine_class
 coarse_to_category = {
