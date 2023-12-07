@@ -124,7 +124,7 @@ def show_clicked_image(clickData):
         plt.imsave("clicked-image.png", image)
         encoded_image = base64.b64encode(open("clicked-image.png", 'rb').read()).decode('ascii')
         return 'data:image/png;base64,{}'.format(encoded_image)
-    
+
 # Callback for showing prediction distribution of clicked point
 @app.callback(
     Output("softmax-distribution-clicked-image", 'src'),
@@ -134,10 +134,10 @@ def show_distribution_image(n_clicks, clickData):
     if clickData:
         image_data = np.array(clickData['points'][0]['customdata'][0], dtype='uint8')
         image = image_data.reshape(32, 32, 3)
-        prediction_distribution(image, top=3)
-        encoded_image = base64.b64encode(open("prediction-distribution-image.png", 'rb').read()).decode('ascii')
+        img_stream = prediction_distribution(image, top=3)
+        encoded_image = base64.b64encode(img_stream.read()).decode('ascii')
+        img_stream.close()
         return 'data:image/png;base64,{}'.format(encoded_image)
-
 
 # Callback for showing lime explanation of clicked point
 @app.callback(
