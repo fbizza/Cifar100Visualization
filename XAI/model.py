@@ -10,7 +10,9 @@ from keras.preprocessing import image
 import numpy as np
 import keras
 import matplotlib.pyplot as plt
-
+import plotly.graph_objects as go
+import plotly.express as px
+from io import BytesIO
 
 fine_to_cateogry = {
     0: 'apple',
@@ -309,7 +311,6 @@ def predict_classes(images, norm):
 def prediction_distribution(image, top):
     array = np.expand_dims(image, axis=0)
 
-
     predictions = classifier.predict(array)
     probabilities = predictions.reshape(-1)  # Reshape to 1D array
 
@@ -317,14 +318,23 @@ def prediction_distribution(image, top):
     get_class_name = np.vectorize(lambda index: fine_to_cateogry[index])
     top_classes = get_class_name(top_indices)
 
-    fig, ax = plt.subplots()
-    top_probabilities = probabilities[top_indices]
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=top_classes,
+        y=probabilities[top_indices],
+        marker_color=px.colors.qualitative.Light24[:len(top_classes)]
+    ))
+    fig.update_layout(
+        xaxis=dict(title='Class'),
+        yaxis=dict(title='Probability'),
+        title='Top n Probabilities',
+        xaxis_tickangle=-45,
+    )
 
-    plt.bar(top_classes, top_probabilities)
-    plt.xlabel('Class')
-    plt.ylabel('Probability')
-    plt.title('Top 3 Probabilities')
-    plt.xticks(rotation=45, ha='right')  
-    plt.savefig('prediction-distribution-image.png', bbox_inches='tight')
+    img_stream = BytesIO() # Save the figure to a BytesIO object
+    fig.write_image(img_stream, format='png')
+    img_stream.seek(0)
+
+    return img_stream
 
     
