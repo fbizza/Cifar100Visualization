@@ -1,10 +1,11 @@
 # Cifar100Visualization
 Interactive dashboard that enables some simple exploration of data from the [CIFAR-100 dataset](https://www.cs.toronto.edu/~kriz/cifar.html)
 
-<p align="center">
-  <img src="[https://github.com/fbizza/Cifar100Visualization/assets/109001290/97269ef6-0849-457c-9258-4833135c0bc7]>
-</p>	
+![xai_gif](https://github.com/fbizza/Cifar100Visualization/assets/109001290/68bb22ef-ab27-4919-b67c-18d67ac31c81)
 
+<p align="center">
+  <img src="[https://github.com/fbizza/Cifar100Visualization/assets/109001290/97269ef6-0849-457c-9258-4833135c0bc7](https://github.com/fbizza/Cifar100Visualization/assets/109001290/68bb22ef-ab27-4919-b67c-18d67ac31c81)">
+</p>	
 
 ## Run the code
 From the `XAI` folder: 
