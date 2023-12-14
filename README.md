@@ -6,7 +6,7 @@ Interactive dashboard that enables some simple exploration of data from the [CIF
 </p>	
 
 ## Run the code
-From the `t-SNE` folder: 
+From the `XAI` folder: 
 ```
 pip install -r requirements.txt
 ```
