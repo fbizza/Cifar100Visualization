@@ -10,4 +10,4 @@ From the `XAI` folder:
 ```
 pip install -r requirements.txt
 ```
-Then run `app.py` and just click on the link
+Then run `app.py` and just click on the link, it might take a while (~20 seconds) depending on the hardware of your system
