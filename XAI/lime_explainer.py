@@ -9,7 +9,7 @@ from skimage.segmentation import mark_boundaries
 def predict(x):
     return predict_classes(x, norm=True)
 
-
+# Creates LIME explanation image
 def lime_explain_img(img):
     img = image.img_to_array(img)
     explainer = lime_image.LimeImageExplainer()
@@ -19,8 +19,8 @@ def lime_explain_img(img):
     return mark_boundaries((temp).astype(np.uint8), (mask).astype(np.uint8))
 
 
+# Use this function to test LIME without running the app
 def test_lime_framework():
-    # Use this function to test LIME without having to run the app
     img_path = "clicked-image.png"  # Change path to your 32x32 test image
     img = image.load_img(img_path, target_size=(32, 32))
     img = image.img_to_array(img)

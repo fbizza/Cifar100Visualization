@@ -2,6 +2,8 @@ import tensorflow as tf
 import numpy as np
 from sklearn.manifold import TSNE
 from model import compute_features_vectors, predict_fine_class
+
+# Dictionaries to map categories
 coarse_to_category = {
     0: 'aquatic mammals',
     1: 'fish',
@@ -127,8 +129,8 @@ fine_to_cateogry = {
     99: 'worm'
 }
 
+# Import data
 np.random.seed(seed=666)
-
 (x_train_fine, fine_labels_train), (x_test_fine, fine_labels_test) = tf.keras.datasets.cifar100.load_data(label_mode='fine')
 (x_train_coarse, coarse_labels_train), (x_test_coarse, coarse_labels_test) = tf.keras.datasets.cifar100.load_data(label_mode='coarse')
 
@@ -155,6 +157,7 @@ def tsne_data(N_IMAGES_PER_CLASS):
     #     plt.imshow(img)
     #     plt.axis('off')
     # plt.show()
+
     print("Predicting classes...")
     predicted_fine_categories = predict_fine_class(x_test)
     print("Extracting feature vectors...")
@@ -167,7 +170,6 @@ def tsne_data(N_IMAGES_PER_CLASS):
     fine_labels = y_test_fine  # These are numbers from 0 to 99
     coarse_categories = [coarse_to_category[label] for label in coarse_labels.flatten()]  # These are strings
     fine_categories = [fine_to_cateogry[label] for label in fine_labels.flatten()]  # These are strings
-    
 
     return (softmax_tsne_x, softmax_tsne_y,                                         # t-sne of feature vector
             first_block_tsne_x, first_block_tsne_y,                                 # t-sne of feature vector
@@ -176,7 +178,7 @@ def tsne_data(N_IMAGES_PER_CLASS):
             fourth_block_tsne_x, fourth_block_tsne_y,                               # t-sne of feature vector
             predicted_fine_categories,                                              # Predicted labels
             coarse_labels.flatten().tolist(), coarse_categories, fine_categories,   # Ground truth labels
-            x_test.reshape((len(x_test), 32 * 32 * 3)))                           # Raw image pixels
+            x_test.reshape((len(x_test), 32 * 32 * 3)))                             # Raw image pixels
 
 
 def tsne_intermediate_layer(x_train, layer_name):

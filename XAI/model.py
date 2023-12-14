@@ -14,6 +14,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 from io import BytesIO
 
+# Dictionary to map categories
 fine_to_cateogry = {
     0: 'apple',
     1: 'aquarium_fish',
@@ -307,7 +308,7 @@ def predict_fine_class(images):
 def predict_classes(images, norm):
     return classifier.predict(images, norm)
 
-
+# Creates the bar plot of the softmax
 def prediction_distribution(image, top):
     array = np.expand_dims(image, axis=0)
 

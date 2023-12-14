@@ -4,7 +4,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import base64
-import dash
 from dash import Dash, dcc, html, Input, Output, State
 from import_data import tsne_data
 from lime_explainer import lime_explain_img
@@ -38,6 +37,7 @@ data = {
 
 }
 
+# Options for the dropdown menu
 tsne_options = [
     {'label': 'First Convolutional Block Output', 'value': 'first_block'},
     {'label': 'Second Convolutional Block Output', 'value': 'second_block'},
@@ -53,7 +53,6 @@ df['correct_prediction'] = df['predicted_fine_category'] == df['fine_category']
 
 # Create app
 app = Dash(__name__, external_stylesheets=[dbc.themes.LITERA])
-
 app.layout = dbc.Container([
     html.H4('Interactive t-SNE plot of CIFAR-100 dataset'),
     html.H6('Click on single points to display their descriptions. Then get the model explanation', style={'opacity': '0.90'}),
@@ -125,7 +124,7 @@ def show_clicked_image(clickData):
         encoded_image = base64.b64encode(open("clicked-image.png", 'rb').read()).decode('ascii')
         return 'data:image/png;base64,{}'.format(encoded_image)
 
-# Callback for showing prediction distribution of clicked point
+# Callback for showing prediction distribution (bar plot) of clicked point
 @app.callback(
     Output("softmax-distribution-clicked-image", 'src'),
     Input("explanation-button", "n_clicks"),
@@ -139,7 +138,7 @@ def show_distribution_image(n_clicks, clickData):
         img_stream.close()
         return 'data:image/png;base64,{}'.format(encoded_image)
 
-# Callback for showing lime explanation of clicked point
+# Callback for showing LIME explanation of clicked point
 @app.callback(
     Output("lime-explanation-clicked-image", 'src'),
     Input("explanation-button", "n_clicks"),
