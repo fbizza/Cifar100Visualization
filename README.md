@@ -4,10 +4,6 @@ Interactive dashboard that enables some simple exploration of data from the [CIF
 ![gif](https://github.com/fbizza/Cifar100Visualization/assets/109001290/1f9fc1ec-e8df-4efe-9adb-636374571b10)
 
 
-<p align="center">
-  <img src="[https://github.com/fbizza/Cifar100Visualization/assets/109001290/97269ef6-0849-457c-9258-4833135c0bc7](https://github.com/fbizza/Cifar100Visualization/assets/109001290/68bb22ef-ab27-4919-b67c-18d67ac31c81)">
-</p>	
-
 ## Run the code
 From the `XAI` folder: 
 ```
