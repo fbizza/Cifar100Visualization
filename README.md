@@ -1,4 +1,4 @@
-# Cifar100Visualization
+# cifar-100-visualization
 Interactive dashboard that enables some simple exploration of data from the [CIFAR-100 dataset](https://www.cs.toronto.edu/~kriz/cifar.html)
 
 ![gif](https://github.com/fbizza/Cifar100Visualization/assets/109001290/1f9fc1ec-e8df-4efe-9adb-636374571b10)
